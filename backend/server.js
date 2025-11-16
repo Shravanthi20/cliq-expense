@@ -1,9 +1,11 @@
+// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const cron = require('node-cron');
+const path = require('path');
 
 const app = express();
 
@@ -27,7 +29,6 @@ const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const transactionsRoutes = require('./routes/transactions');
 const forecastRouter = require('./routes/forecast');
-// notificationsRouter will be required below (after it exists)
 const createExpenseRoutes = require('./routes/expenseRoutes');
 const createGroupRoutes = require('./routes/groupRoutes');
 const createUserRoutes = require('./routes/userRoutes');
@@ -71,13 +72,12 @@ async function connectMongoose() {
 connectMongoClient();
 connectMongoose();
 
-// ✅ Express routes
+// ✅ Express API routes
 app.use('/api/auth', authRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', transactionsRoutes);
 app.use('/api/forecast', forecastRouter);
 
-// Require notifications router AFTER you add/replace the file
 let notificationsRouter;
 try {
   notificationsRouter = require('./routes/notifications');
@@ -86,7 +86,7 @@ try {
   console.warn('⚠️ notifications route not loaded:', e.message);
 }
 
- // ✅ Native routes
+// ✅ Native routes
 app.use('/api/users', (req, res, next) => {
   if (!Users) return res.status(500).json({ error: 'Database not initialized' });
   createUserRoutes(Users)(req, res, next);
@@ -97,16 +97,23 @@ app.use('/api/expenses', (req, res, next) => {
   createExpenseRoutes(Expenses)(req, res, next);
 });
 
-// ✅ Use Mongoose-based model for groups (no native)
+// ✅ Use Mongoose-based model for groups
 app.use('/api/groups', createGroupRoutes(Groups));
 
-// 🩺 Health check
-app.get('/', (req, res) => res.send('Server is running ✅'));
+// 🩺 Health check (API, not root)
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// 🔔 Reminder cron — REMOVED
-// The reminder cron and the Reminder model were intentionally removed per user request.
-// If you want to re-enable it later, re-add the Reminder model and the cron logic.
+// 🔕 Reminder cron disabled (as in your comment)
 console.log('🔕 Reminder cron disabled (removed by user request)');
+
+// 🌐 Serve React frontend build
+const frontendBuildPath = path.join(__dirname, '..', 'frontend', 'build');
+app.use(express.static(frontendBuildPath));
+
+// For any non-API route, send back index.html (for React Router support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
+});
 
 // 🚀 Start server
 const PORT = process.env.PORT || 5050;
