@@ -1,0 +1,6 @@
+date,amount,source,payment_method,notes,group_id
+2025-09-01,50000,Salary,NetBanking,Monthly salary,group1
+2025-09-02,2000,Freelance,UPI,Logo design project,group1
+2025-09-03,1500,Interest,Bank,Fixed deposit interest,group2
+2025-09-04,3000,Gift,Cash,Birthday gift from friend,group2
+2025-09-05,2500,Freelance,UPI,Website maintenance,group1
